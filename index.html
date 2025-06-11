@@ -1,44 +1,33 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Document Approvals</title>
-  <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
-</head>
-<body>
-  <h2>Loading...</h2>
+<script>
+  console.log("Running inTeams check");
 
-  <script>
-    function inTeams() {
-      try {
-        return window !== window.parent && window.parent !== null;
-      } catch {
-        return false;
-      }
+  function inTeams() {
+    try {
+      return window !== window.parent && window.parent !== null;
+    } catch {
+      return false;
     }
+  }
 
-    if (inTeams() && microsoftTeams?.app) {
-      microsoftTeams.app.initialize()
-        .then(() => {
-          console.log("Teams SDK initialized");
-          return microsoftTeams.app.getContext();
-        })
-        .then(context => {
-          const docId = context.subEntityId || "No document selected";
-          console.log("Loaded docId:", docId);
+  if (inTeams() && microsoftTeams?.app) {
+    console.log("Running inside Teams");
 
-          // Load document via API (optional)
-          // fetch(`/api/document/${docId}`).then(...)
-
-          document.body.innerHTML = `<h1>Approve Document ID: ${docId}</h1>`;
-        })
-        .catch(error => {
-          console.error("Error:", error);
-          document.body.innerHTML = `<h1>Context Load Error: ${error.message}</h1>`;
-        });
-    } else {
-      document.body.innerHTML = `<h1>This page is meant to run inside Microsoft Teams.</h1>`;
-    }
-  </script>
-</body>
-</html>
+    microsoftTeams.app.initialize()
+      .then(() => {
+        console.log("Teams SDK initialized");
+        return microsoftTeams.app.getContext();
+      })
+      .then(context => {
+        console.log("Context loaded:", context);
+        const docId = context.subEntityId || "No document selected";
+        document.body.innerHTML = `<h1>Approve Document ID: ${docId}</h1>`;
+      })
+      .catch(error => {
+        console.error("Context load error:", error);
+        document.body.innerHTML = `<h1>Context Load Error: ${error.message}</h1>`;
+      });
+  } else {
+    console.log("Not running inside Teams");
+    document.body.innerHTML = `<h1>This page is meant to be run inside Microsoft Teams.</h1>`;
+  }
+</script>
