@@ -9,7 +9,6 @@
   <h2>Loading...</h2>
 
   <script>
-    // Function to detect if page is inside Microsoft Teams iframe
     function inTeams() {
       try {
         return window !== window.parent && window.parent !== null;
@@ -18,18 +17,27 @@
       }
     }
 
-    if (inTeams() && microsoftTeams.app) {
+    if (inTeams() && microsoftTeams?.app) {
       microsoftTeams.app.initialize()
-        .then(() => microsoftTeams.app.getContext())
+        .then(() => {
+          console.log("Teams SDK initialized");
+          return microsoftTeams.app.getContext();
+        })
         .then(context => {
           const docId = context.subEntityId || "No document selected";
+          console.log("Loaded docId:", docId);
+
+          // Load document via API (optional)
+          // fetch(`/api/document/${docId}`).then(...)
+
           document.body.innerHTML = `<h1>Approve Document ID: ${docId}</h1>`;
         })
         .catch(error => {
-          document.body.innerHTML = `<h1>Error loading Teams context: ${error}</h1>`;
+          console.error("Error:", error);
+          document.body.innerHTML = `<h1>Context Load Error: ${error.message}</h1>`;
         });
     } else {
-      document.body.innerHTML = `<h1>This page is meant to be run inside Microsoft Teams.</h1>`;
+      document.body.innerHTML = `<h1>This page is meant to run inside Microsoft Teams.</h1>`;
     }
   </script>
 </body>
