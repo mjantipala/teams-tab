@@ -1,37 +1,36 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
   <title>Document Approvals</title>
-  <meta charset="UTF-8">
   <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
 </head>
 <body>
   <h2>Loading...</h2>
 
- 
-<script>
-  // Check if inside Teams: window is inside iframe and MicrosoftTeams SDK is loaded
-  function inTeams() {
-    try {
-      return window !== window.parent && window.parent !== null;
-    } catch {
-      return false;
+  <script>
+    // Function to detect if page is inside Microsoft Teams iframe
+    function inTeams() {
+      try {
+        return window !== window.parent && window.parent !== null;
+      } catch {
+        return false;
+      }
     }
-  }
 
-  if (inTeams() && microsoftTeams.app) {
-    microsoftTeams.app.initialize()
-      .then(() => microsoftTeams.app.getContext())
-      .then(context => {
-        const docId = context.subEntityId || "No document selected";
-        document.body.innerHTML = `<h1>Approve Document ID: ${docId}</h1>`;
-      })
-      .catch(error => {
-        document.body.innerHTML = `<h1>Error loading Teams context: ${error}</h1>`;
-      });
-  } else {
-    document.body.innerHTML = `<h1>This page is meant to be run inside Microsoft Teams.</h1>`;
-  }
-</script>
+    if (inTeams() && microsoftTeams.app) {
+      microsoftTeams.app.initialize()
+        .then(() => microsoftTeams.app.getContext())
+        .then(context => {
+          const docId = context.subEntityId || "No document selected";
+          document.body.innerHTML = `<h1>Approve Document ID: ${docId}</h1>`;
+        })
+        .catch(error => {
+          document.body.innerHTML = `<h1>Error loading Teams context: ${error}</h1>`;
+        });
+    } else {
+      document.body.innerHTML = `<h1>This page is meant to be run inside Microsoft Teams.</h1>`;
+    }
+  </script>
 </body>
 </html>
