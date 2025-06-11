@@ -8,19 +8,30 @@
 <body>
   <h2>Loading...</h2>
 
-  <script>
+ 
+<script>
+  // Check if inside Teams: window is inside iframe and MicrosoftTeams SDK is loaded
+  function inTeams() {
+    try {
+      return window !== window.parent && window.parent !== null;
+    } catch {
+      return false;
+    }
+  }
+
+  if (inTeams() && microsoftTeams.app) {
     microsoftTeams.app.initialize()
-      .then(() => {
-        return microsoftTeams.app.getContext();
-      })
-      .then((context) => {
-        // subEntityId will be undefined if no docId was passed
+      .then(() => microsoftTeams.app.getContext())
+      .then(context => {
         const docId = context.subEntityId || "No document selected";
         document.body.innerHTML = `<h1>Approve Document ID: ${docId}</h1>`;
       })
-      .catch((error) => {
+      .catch(error => {
         document.body.innerHTML = `<h1>Error loading Teams context: ${error}</h1>`;
       });
-  </script>
+  } else {
+    document.body.innerHTML = `<h1>This page is meant to be run inside Microsoft Teams.</h1>`;
+  }
+</script>
 </body>
 </html>
