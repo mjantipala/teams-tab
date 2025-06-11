@@ -1,15 +1,7 @@
 <script>
   console.log("Running inTeams check");
 
-  function inTeams() {
-    try {
-      return window !== window.parent && window.parent !== null;
-    } catch {
-      return false;
-    }
-  }
-
-  if (inTeams() && microsoftTeams?.app) {
+  if ( microsoftTeams?.app) {
     console.log("Running inside Teams");
 
     microsoftTeams.app.initialize()
