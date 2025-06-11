@@ -9,12 +9,18 @@
   <h2>Loading...</h2>
 
   <script>
-    microsoftTeams.app.initialize().then(() => {
-      microsoftTeams.app.getContext().then((context) => {
-        const docId = context.subEntityId;
+    microsoftTeams.app.initialize()
+      .then(() => {
+        return microsoftTeams.app.getContext();
+      })
+      .then((context) => {
+        // subEntityId will be undefined if no docId was passed
+        const docId = context.subEntityId || "No document selected";
         document.body.innerHTML = `<h1>Approve Document ID: ${docId}</h1>`;
+      })
+      .catch((error) => {
+        document.body.innerHTML = `<h1>Error loading Teams context: ${error}</h1>`;
       });
-    });
   </script>
 </body>
 </html>
