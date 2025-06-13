@@ -16,31 +16,25 @@
     <p id="message-output"></p>
   </div>
 
-  <script>
-    window.addEventListener("DOMContentLoaded", () => {
-      const sdkStatus = document.getElementById("sdk-status");
-      const messageOutput = document.getElementById("message-output");
+ <script>
+  window.addEventListener("DOMContentLoaded", () => {
+    const sdkStatus = document.getElementById("sdk-status");
+    const messageOutput = document.getElementById("message-output");
 
-      microsoftTeams.app.initialize()
-        .then(() => {
-          sdkStatus.textContent = "✅ Microsoft Teams SDK initialized.";
+    microsoftTeams.app.initialize().then(() => {
+      sdkStatus.textContent = "✅ Microsoft Teams SDK initialized.";
 
-          microsoftTeams.app.getContext().then((context) => {
-            const message = context.page.subPageId || context.subEntityId;
-
-            if (message) {
-              messageOutput.textContent = "📩 Message: " + decodeURIComponent(message);
-            } else {
-              messageOutput.textContent = "ℹ️ No message found in subEntityId.";
-            }
-          }).catch((err) => {
-            messageOutput.textContent = "❌ Failed to get Teams context: " + err;
-          });
-        })
-        .catch((err) => {
-          sdkStatus.textContent = "❌ Error initializing Teams SDK: " + err;
-        });
+      microsoftTeams.app.getContext().then((context) => {
+        const message = context.subEntityId || "No message found.";
+        messageOutput.textContent = "📩 Message: " + decodeURIComponent(message);
+      }).catch((err) => {
+        messageOutput.textContent = "❌ Failed to get context: " + err;
+      });
+    }).catch((err) => {
+      sdkStatus.textContent = "❌ SDK init failed: " + err;
     });
-  </script>
+  });
+</script>
+
 </body>
 </html>
