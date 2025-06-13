@@ -1,25 +1,26 @@
-<script>
-  console.log("Running inTeams check");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DocuVu Tab</title>
+  <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; background: #f2f2f2; }
+    .card { background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>DocuVu Notification Tab</h2>
+    <p id="output">Loading...</p>
+  </div>
 
-  if ( microsoftTeams?.app) {
-    console.log("Running inside Teams");
-
-    microsoftTeams.app.initialize()
-      .then(() => {
-        console.log("Teams SDK initialized");
-        return microsoftTeams.app.getContext();
-      })
-      .then(context => {
-        console.log("Context loaded:", context);
-        const docId = context.subEntityId || "No document selected";
-        document.body.innerHTML = `<h1>Approve Document ID: ${docId}</h1>`;
-      })
-      .catch(error => {
-        console.error("Context load error:", error);
-        document.body.innerHTML = `<h1>Context Load Error: ${error.message}</h1>`;
-      });
-  } else {
-    console.log("Not running inside Teams");
-    document.body.innerHTML = `<h1>This page is meant to be run inside Microsoft Teams.</h1>`;
-  }
-</script>
+  <script>
+    microsoftTeams.app.initialize().then(() => {
+      document.getElementById("output").textContent = "✅ Teams SDK Initialized.";
+    }).catch((err) => {
+      document.getElementById("output").textContent = "❌ Error initializing Teams SDK: " + err;
+    });
+  </script>
+</body>
+</html>
