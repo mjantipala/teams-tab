@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>DocuVu Tab</title>
-  <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
   <style>
     body { font-family: sans-serif; padding: 2rem; background: #f2f2f2; }
     .card { background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
@@ -15,12 +14,27 @@
     <p id="output">Loading...</p>
   </div>
 
+  <!-- Load Teams SDK -->
+  <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"
+          onload="initTeamsApp()" 
+          onerror="document.getElementById('output').textContent = '❌ Failed to load Teams SDK';">
+  </script>
+
+  <!-- Your logic -->
   <script>
-    microsoftTeams.app.initialize().then(() => {
-      document.getElementById("output").textContent = "✅ Teams SDK Initialized.";
-    }).catch((err) => {
-      document.getElementById("output").textContent = "❌ Error initializing Teams SDK: " + err;
-    });
+    function initTeamsApp() {
+      if (window.microsoftTeams) {
+        microsoftTeams.app.initialize()
+          .then(() => {
+            document.getElementById("output").textContent = "✅ Teams SDK Initialized.";
+          })
+          .catch((err) => {
+            document.getElementById("output").textContent = "❌ Error initializing Teams SDK: " + err;
+          });
+      } else {
+        document.getElementById("output").textContent = "❌ microsoftTeams not available.";
+      }
+    }
   </script>
 </body>
 </html>
