@@ -21,27 +21,25 @@
       const sdkStatus = document.getElementById("sdk-status");
       const messageOutput = document.getElementById("message-output");
 
-      if (window.microsoftTeams && microsoftTeams.app) {
-        microsoftTeams.app.initialize()
-          .then(() => {
-            sdkStatus.textContent = "✅ Microsoft Teams SDK initialized.";
+      microsoftTeams.app.initialize()
+        .then(() => {
+          sdkStatus.textContent = "✅ Microsoft Teams SDK initialized.";
 
-            // Get message from URL
-            const params = new URLSearchParams(window.location.search);
-            const message = params.get("message");
+          microsoftTeams.app.getContext().then((context) => {
+            const message = context.page.subPageId || context.subEntityId;
 
             if (message) {
               messageOutput.textContent = "📩 Message: " + decodeURIComponent(message);
             } else {
-              messageOutput.textContent = "ℹ️ No message was passed in the URL.";
+              messageOutput.textContent = "ℹ️ No message found in subEntityId.";
             }
-          })
-          .catch((err) => {
-            sdkStatus.textContent = "❌ Error initializing Teams SDK: " + err;
+          }).catch((err) => {
+            messageOutput.textContent = "❌ Failed to get Teams context: " + err;
           });
-      } else {
-        sdkStatus.textContent = "❌ Microsoft Teams SDK not available.";
-      }
+        })
+        .catch((err) => {
+          sdkStatus.textContent = "❌ Error initializing Teams SDK: " + err;
+        });
     });
   </script>
 </body>
