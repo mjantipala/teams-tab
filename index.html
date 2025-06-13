@@ -2,128 +2,113 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>DocuVu Notifications</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DocuVu – Notification Tab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    :root {
-      --bg-color: #f4f6f9;
-      --text-color: #2b2b2b;
-      --card-bg: #ffffff;
-      --secondary: #666;
-    }
-
-    [data-theme="dark"] {
-      --bg-color: #1b1c1d;
-      --text-color: #f1f1f1;
-      --card-bg: #2a2a2a;
-      --secondary: #aaa;
-    }
-
     body {
       margin: 0;
       padding: 0;
-      font-family: "Segoe UI", sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
+      font-family: system-ui, sans-serif;
+      background-color: #f4f7fa;
       display: flex;
-      justify-content: center;
       align-items: center;
-      height: 100vh;
+      justify-content: center;
+      min-height: 100vh;
     }
 
-    .card {
-      background-color: var(--card-bg);
-      padding: 2rem 2.5rem;
+    .container {
+      background: #ffffff;
       border-radius: 12px;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-      width: 100%;
-      max-width: 520px;
-      box-sizing: border-box;
-      transition: background-color 0.3s, color 0.3s;
+      padding: 2rem;
+      max-width: 500px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+      text-align: center;
     }
 
-    .card h1 {
+    h1 {
       font-size: 1.5rem;
-      margin-bottom: 0.75rem;
+      color: #2b2b2b;
+      margin-bottom: 0.5rem;
     }
 
     .message {
       font-size: 1.1rem;
-      margin-top: 1rem;
+      margin: 1.5rem 0;
+      color: #444;
     }
 
     .status {
-      margin-top: 1rem;
-      font-size: 0.9rem;
-      color: var(--secondary);
+      font-size: 0.875rem;
+      color: #777;
     }
 
-    .loading {
-      font-style: italic;
-      color: var(--secondary);
+    .error {
+      color: #c00;
+    }
+
+    .info {
+      color: #0063b1;
     }
   </style>
 </head>
 <body>
-  <div class="card" id="card-container">
-    <h1>📄 DocuVu Notification</h1>
-    <div class="message" id="message-output">Loading message...</div>
-    <div class="status" id="sdk-status">Initializing Teams SDK...</div>
+  <div class="container">
+    <h1>📬 DocuVu Notification</h1>
+    <div id="message" class="message">Waiting for message...</div>
+    <div id="status" class="status">Initializing...</div>
   </div>
 
-  <!-- Microsoft Teams SDK v2 -->
   <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
-
   <script>
-    const sdkStatus = document.getElementById("sdk-status");
-    const messageOutput = document.getElementById("message-output");
-    const card = document.getElementById("card-container");
+    const messageEl = document.getElementById("message");
+    const statusEl = document.getElementById("status");
 
-    function renderContext(context) {
-      // Theme awareness
-      if (context?.app?.theme) {
-        document.body.setAttribute("data-theme", context.app.theme);
-      }
+    function updateMessage(context) {
+      const message = context?.page?.subPageId;
+      messageEl.textContent = message
+        ? `📩 Message: ${decodeURIComponent(message)}`
+        : "ℹ️ No message passed via subPageId.";
+    }
 
-      // Intelligent message extraction
-      const msg =
-        context?.page?.subPageId ||
-        context?.subEntityId ||
-        context?.entityId ||
-        context?.app?.user?.displayName ||
-        null;
-
-      if (msg) {
-        messageOutput.classList.remove("loading");
-        messageOutput.textContent = `📬 ${decodeURIComponent(msg)}`;
-      } else {
-        messageOutput.textContent = "ℹ️ No message was passed via context.";
-      }
+    function isWebClient(context) {
+      return context?.app?.host?.name?.toLowerCase() === "teamsweb";
     }
 
     window.addEventListener("DOMContentLoaded", () => {
       if (window.microsoftTeams?.app) {
-        microsoftTeams.app.initialize().then(() => {
-          sdkStatus.textContent = "✅ Teams SDK Initialized";
+        microsoftTeams.app.initialize()
+          .then(() => {
+            statusEl.textContent = "✅ Teams SDK initialized";
 
-          microsoftTeams.app.getContext().then((context) => {
-            renderContext(context);
-          }).catch((err) => {
-            messageOutput.textContent = "❌ Failed to retrieve context: " + err;
-          });
+            microsoftTeams.app.getContext().then((context) => {
+              updateMessage(context);
 
-          // Watch for context updates (if tab is reloaded via deep link)
-          if (microsoftTeams.pages?.registerOnLoadHandler) {
-            microsoftTeams.pages.registerOnLoadHandler((context) => {
-              sdkStatus.textContent = "🔄 Context updated via deep link.";
-              renderContext(context);
+              if (isWebClient(context)) {
+                // Auto-refresh when tab becomes visible (Web)
+                document.addEventListener("visibilitychange", () => {
+                  if (document.visibilityState === "visible") {
+                    location.reload();
+                  }
+                });
+                statusEl.textContent += " | Running in Web - auto-refresh enabled";
+              } else if (microsoftTeams.pages?.registerOnLoadHandler) {
+                microsoftTeams.pages.registerOnLoadHandler((updatedContext) => {
+                  updateMessage(updatedContext);
+                  statusEl.textContent = "🔁 Tab reloaded via deep link.";
+                });
+              } else {
+                statusEl.innerHTML += `<br><span class="error">⚠️ OnLoadHandler not supported on this client.</span>`;
+              }
+
+            }).catch((err) => {
+              messageEl.innerHTML = `<span class="error">❌ Failed to get context: ${err}</span>`;
             });
-          }
-        }).catch((err) => {
-          sdkStatus.textContent = "❌ SDK Initialization Failed: " + err;
-        });
+          })
+          .catch((err) => {
+            statusEl.innerHTML = `<span class="error">❌ SDK init failed: ${err}</span>`;
+          });
       } else {
-        sdkStatus.textContent = "❌ Microsoft Teams SDK is not available.";
+        statusEl.innerHTML = `<span class="error">❌ Teams SDK not available.</span>`;
       }
     });
   </script>
