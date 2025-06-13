@@ -50,7 +50,7 @@
         status.innerHTML += "<br>✅ <span class='success'>Teams SDK initialized.</span>";
 
         microsoftTeams.app.getContext().then((context) => {
-          sdkContextEl.textContent = JSON.stringify(context.app, null, 2);
+          sdkContextEl.textContent = JSON.stringify(context, null, 2);
         }).catch((err) => {
           sdkContextEl.textContent = "❌ Failed to get context: " + err;
         });
