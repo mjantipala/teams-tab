@@ -55,7 +55,7 @@
                   messageOutput.textContent = "❌ Error parsing context from URL.";
                 }
               } else {
-                messageOutput.textContent = "ℹ️ No message was passed in the context or URL.";
+                messageOutput.textContent = "ℹ️ No message was passed in the context or URL." + context;
               }
             }
           }).catch((err) => {
