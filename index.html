@@ -14,15 +14,12 @@
     <p id="output">Loading...</p>
   </div>
 
-  <!-- Load Teams SDK -->
-  <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"
-          onload="initTeamsApp()" 
-          onerror="document.getElementById('output').textContent = '❌ Failed to load Teams SDK';">
-  </script>
+  <!-- Load Teams SDK first -->
+  <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
 
   <!-- Your logic -->
   <script>
-    function initTeamsApp() {
+    window.addEventListener('DOMContentLoaded', () => {
       if (window.microsoftTeams) {
         microsoftTeams.app.initialize()
           .then(() => {
@@ -32,9 +29,9 @@
             document.getElementById("output").textContent = "❌ Error initializing Teams SDK: " + err;
           });
       } else {
-        document.getElementById("output").textContent = "❌ microsoftTeams not available.";
+        document.getElementById("output").textContent = "❌ Teams SDK not available.";
       }
-    }
+    });
   </script>
 </body>
 </html>
