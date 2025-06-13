@@ -14,13 +14,12 @@
     <p id="output">Loading...</p>
   </div>
 
-  <!-- Load Teams SDK first -->
+  <!-- ✅ Teams SDK, no onload -->
   <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
 
-  <!-- Your logic -->
   <script>
     window.addEventListener('DOMContentLoaded', () => {
-      if (window.microsoftTeams) {
+      if (window.microsoftTeams && microsoftTeams.app) {
         microsoftTeams.app.initialize()
           .then(() => {
             document.getElementById("output").textContent = "✅ Teams SDK Initialized.";
