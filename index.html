@@ -29,7 +29,7 @@
     <p id="sdk-status" class="status">Initializing...</p>
   </div>
 
-  <!-- Microsoft Teams JavaScript SDK -->
+  <!-- Load Teams SDK v2 -->
   <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
 
   <script>
@@ -48,18 +48,22 @@
         microsoftTeams.app.initialize().then(() => {
           sdkStatus.textContent = "✅ Teams SDK initialized.";
 
-          // Initial context load
+          // Load context once
           microsoftTeams.app.getContext().then((context) => {
             updateMessage(context);
           }).catch((err) => {
             messageOutput.textContent = "❌ Failed to get context: " + err;
           });
 
-          // Register listener for tab reload via deep link
-          microsoftTeams.app.registerOnLoadHandler((context) => {
-            sdkStatus.textContent = "🔄 Context updated from notification.";
-            updateMessage(context);
-          });
+          // ✅ Listen to context reloads (deep link updates)
+          if (microsoftTeams.pages?.registerOnLoadHandler) {
+            microsoftTeams.pages.registerOnLoadHandler((context) => {
+              sdkStatus.textContent = "🔄 Tab context updated.";
+              updateMessage(context);
+            });
+          } else {
+            sdkStatus.textContent += " ⚠️ OnLoadHandler not available in SDK.";
+          }
 
         }).catch((err) => {
           sdkStatus.textContent = "❌ SDK init failed: " + err;
