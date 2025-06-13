@@ -2,73 +2,81 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>DocuVu Notification Tab</title>
+  <title>Teams Context Debugger</title>
   <style>
     body {
       font-family: sans-serif;
-      padding: 2rem;
       background: #f2f2f2;
+      padding: 2rem;
     }
     .card {
       background: white;
       padding: 1.5rem;
       border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      white-space: pre-wrap;
     }
+    .error { color: red; }
+    .success { color: green; }
   </style>
   <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
 </head>
 <body>
   <div class="card">
-    <h2>DocuVu Notification Tab</h2>
-    <p id="sdk-status">Loading...</p>
-    <p id="message-output">Waiting for message...</p>
+    <h2>🛠 Teams Context Debugger</h2>
+    <p id="status">Loading...</p>
+    <hr />
+    <h3>🔍 Context from SDK:</h3>
+    <pre id="sdk-context">Loading...</pre>
+    <h3>🔍 Context from URL:</h3>
+    <pre id="url-context">Loading...</pre>
   </div>
 
   <script>
-    window.addEventListener("DOMContentLoaded", () => {
-      const sdkStatus = document.getElementById("sdk-status");
-      const messageOutput = document.getElementById("message-output");
+    const status = document.getElementById("status");
+    const sdkContextEl = document.getElementById("sdk-context");
+    const urlContextEl = document.getElementById("url-context");
 
-      if (window.microsoftTeams) {
-        microsoftTeams.app.initialize().then(() => {
-          sdkStatus.textContent = "✅ Microsoft Teams SDK initialized.";
+    // Check if in Teams iframe
+    if (window.self === window.top) {
+      status.innerHTML = "⚠️ <span class='error'>This page is NOT running inside Microsoft Teams (no iframe detected).</span>";
+    } else {
+      status.innerHTML = "🧩 In iframe (likely Teams).";
+    }
 
-          // Try to get context via SDK
-          microsoftTeams.app.getContext().then((context) => {
-            const message = context.subEntityId;
-            if (message) {
-              messageOutput.textContent = "📩 Message from context: " + message;
-            } else {
-              // Fallback: Try to extract from URL manually
-              const params = new URLSearchParams(window.location.search);
-              const contextParam = params.get("context");
+    // Try to get SDK context
+    if (window.microsoftTeams && microsoftTeams.app) {
+      microsoftTeams.app.initialize().then(() => {
+        status.innerHTML += "<br>✅ <span class='success'>Teams SDK initialized.</span>";
 
-              if (contextParam) {
-                try {
-                  const parsedContext = JSON.parse(decodeURIComponent(contextParam));
-                  const subEntity = parsedContext.subEntityId;
-                  messageOutput.textContent = subEntity
-                    ? "📩 Message from URL: " + subEntity
-                    : "ℹ️ Context present, but no subEntityId found.";
-                } catch (e) {
-                  messageOutput.textContent = "❌ Error parsing context from URL.";
-                }
-              } else {
-                messageOutput.textContent = "ℹ️ No message was passed in the context or URL." + context;
-              }
-            }
-          }).catch((err) => {
-            messageOutput.textContent = "❌ Failed to get context: " + err;
-          });
+        microsoftTeams.app.getContext().then((context) => {
+          sdkContextEl.textContent = JSON.stringify(context, null, 2);
         }).catch((err) => {
-          sdkStatus.textContent = "❌ SDK init failed: " + err;
+          sdkContextEl.textContent = "❌ Failed to get context: " + err;
         });
-      } else {
-        sdkStatus.textContent = "⚠️ Not running inside Microsoft Teams.";
-        messageOutput.textContent = "ℹ️ Please open this page within the Microsoft Teams application.";
+
+      }).catch((err) => {
+        status.innerHTML += `<br>❌ <span class='error'>SDK init failed: ${err}</span>`;
+      });
+    } else {
+      status.innerHTML += "<br>❌ <span class='error'>Teams SDK not available.</span>";
+    }
+
+    // Also parse query string
+    const params = new URLSearchParams(window.location.search);
+    const rawContext = params.get("context");
+
+    if (rawContext) {
+      try {
+        const decoded = decodeURIComponent(rawContext);
+        const parsed = JSON.parse(decoded);
+        urlContextEl.textContent = JSON.stringify(parsed, null, 2);
+      } catch (e) {
+        urlContextEl.textContent = "❌ Error parsing `context` param: " + e;
       }
-    });
+    } else {
+      urlContextEl.textContent = "ℹ️ No `context` parameter found in URL.";
+    }
   </script>
 </body>
 </html>
