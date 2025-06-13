@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>DocuVu Tab</title>
   <style>
     body {
@@ -13,12 +13,13 @@
       background: white;
       padding: 1.5rem;
       border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
     .status {
       margin-top: 1rem;
-      font-size: 0.95rem;
-      color: #666;
+      font-size: 0.9rem;
+      color: #444;
+      white-space: pre-line;
     }
   </style>
 </head>
@@ -29,7 +30,7 @@
     <p id="sdk-status" class="status">Initializing...</p>
   </div>
 
-  <!-- Load Teams SDK v2 -->
+  <!-- ✅ Load Teams SDK v2 -->
   <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
 
   <script>
@@ -39,37 +40,37 @@
     function updateMessage(context) {
       const message = context?.page?.subPageId;
       messageOutput.textContent = message
-        ? "📩 Message: " + decodeURIComponent(message)
+        ? "📩 Message from subPageId: " + decodeURIComponent(message)
         : "ℹ️ No message passed via subPageId.";
     }
 
     window.addEventListener("DOMContentLoaded", () => {
-      if (window.microsoftTeams && microsoftTeams.app) {
+      if (window.microsoftTeams?.app?.initialize) {
         microsoftTeams.app.initialize().then(() => {
-          sdkStatus.textContent = "✅ Teams SDK initialized.";
+          const sdkVersion = microsoftTeams.app.getSdkVersion?.() || "Unknown";
+          sdkStatus.textContent = "✅ SDK initialized.\nSDK Version: " + sdkVersion;
 
-          // Load context once
           microsoftTeams.app.getContext().then((context) => {
             updateMessage(context);
           }).catch((err) => {
             messageOutput.textContent = "❌ Failed to get context: " + err;
           });
 
-          // ✅ Listen to context reloads (deep link updates)
+          // 🔁 Handle tab reload (user clicks another notification)
           if (microsoftTeams.pages?.registerOnLoadHandler) {
             microsoftTeams.pages.registerOnLoadHandler((context) => {
-              sdkStatus.textContent = "🔄 Tab context updated.";
+              sdkStatus.textContent += "\n🔄 Tab context reloaded.";
               updateMessage(context);
             });
           } else {
-            sdkStatus.textContent += " ⚠️ OnLoadHandler not available in SDK.";
+            sdkStatus.textContent += "\n⚠️ registerOnLoadHandler not available.";
           }
 
         }).catch((err) => {
           sdkStatus.textContent = "❌ SDK init failed: " + err;
         });
       } else {
-        sdkStatus.textContent = "❌ Teams SDK not available.";
+        sdkStatus.textContent = "❌ Teams SDK not available or outdated.";
       }
     });
   </script>
