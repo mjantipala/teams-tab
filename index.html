@@ -17,56 +17,52 @@
   </div>
 
   <script>
+    const sdkStatus = document.getElementById("sdk-status");
+    const messageOutput = document.getElementById("message-output");
+
+    function tryGetMessageFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const contextParam = params.get('context');
+      if (contextParam) {
+        try {
+          const contextObj = JSON.parse(decodeURIComponent(contextParam));
+          const message = contextObj.subEntityId;
+          return message;
+        } catch (e) {
+          console.error("Context JSON parse failed", e);
+          return null;
+        }
+      }
+      return null;
+    }
+
     window.addEventListener("DOMContentLoaded", () => {
-      const sdkStatus = document.getElementById("sdk-status");
-      const messageOutput = document.getElementById("message-output");
+      if (window.microsoftTeams?.app?.initialize) {
+        microsoftTeams.app.initialize().then(() => {
+          sdkStatus.textContent = "✅ Microsoft Teams SDK initialized.";
 
-      // Initialize Teams SDK
-      if (window.microsoftTeams && microsoftTeams.app) {
-        microsoftTeams.app.initialize()
-          .then(() => {
-            sdkStatus.textContent = "✅ Microsoft Teams SDK initialized.";
-
-            // Try retrieving the message via Teams context
-            microsoftTeams.app.getContext()
-              .then(context => {
-                const message = context.subEntityId;
-                if (message) {
-                  messageOutput.textContent = "📩 Message: " + message;
-                  return;
-                }
-                // Fallback: parse 'context' parameter from URL
-                parseContextFromUrl();
-              })
-              .catch(err => {
-                sdkStatus.textContent = "❌ SDK context error: " + err;
-                parseContextFromUrl();
-              });
-          })
-          .catch(err => {
-            sdkStatus.textContent = "❌ SDK init failed: " + err;
-            parseContextFromUrl();
+          microsoftTeams.app.getContext().then((context) => {
+            const message = context.subEntityId;
+            if (message) {
+              messageOutput.textContent = "📩 Message: " + message;
+            } else {
+              // Fallback: Try to parse from query string
+              const fallbackMessage = tryGetMessageFromUrl();
+              if (fallbackMessage) {
+                messageOutput.textContent = "📩 (Fallback) Message: " + fallbackMessage;
+              } else {
+                messageOutput.textContent = "ℹ️ No message was passed in the context or URL.";
+              }
+            }
+          }).catch(err => {
+            messageOutput.textContent = "❌ Failed to get context: " + err;
           });
+
+        }).catch(err => {
+          sdkStatus.textContent = "❌ SDK init failed: " + err;
+        });
       } else {
         sdkStatus.textContent = "❌ Microsoft Teams SDK not available.";
-        parseContextFromUrl();
-      }
-
-      // Fallback method to parse context manually
-      function parseContextFromUrl() {
-        const params = new URLSearchParams(window.location.search);
-        const contextParam = params.get('context');
-        if (contextParam) {
-          try {
-            const contextObj = JSON.parse(decodeURIComponent(contextParam));
-            const msg = contextObj.subEntityId;
-            messageOutput.textContent = msg ? "📩 Message: " + msg : "ℹ️ No message in context.";
-          } catch (e) {
-            messageOutput.textContent = "❌ Error parsing context: " + e;
-          }
-        } else {
-          messageOutput.textContent = "ℹ️ No context parameter in URL.";
-        }
       }
     });
   </script>
