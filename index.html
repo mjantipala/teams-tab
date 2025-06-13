@@ -25,8 +25,10 @@
       sdkStatus.textContent = "✅ Microsoft Teams SDK initialized.";
 
       microsoftTeams.app.getContext().then((context) => {
-        const message = context.subEntityId || "No message found.";
-        messageOutput.textContent = "📩 Message: " + decodeURIComponent(message);
+        const message = context.subEntityId;
+          document.getElementById("message-output").textContent = message
+          ? "📩 Message: " + message
+          : "ℹ️ No message was passed in the context.";
       }).catch((err) => {
         messageOutput.textContent = "❌ Failed to get context: " + err;
       });
