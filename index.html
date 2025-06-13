@@ -22,28 +22,53 @@
   <div class="card">
     <h2>DocuVu Notification Tab</h2>
     <p id="sdk-status">Loading...</p>
-    <p id="message-output"></p>
+    <p id="message-output">Waiting for message...</p>
   </div>
 
   <script>
-  window.addEventListener("DOMContentLoaded", () => {
-    const sdkStatus = document.getElementById("sdk-status");
-    const messageOutput = document.getElementById("message-output");
+    window.addEventListener("DOMContentLoaded", () => {
+      const sdkStatus = document.getElementById("sdk-status");
+      const messageOutput = document.getElementById("message-output");
 
-    microsoftTeams.app.initialize().then(() => {
-      sdkStatus.textContent = "✅ Microsoft Teams SDK initialized.";
+      if (window.microsoftTeams) {
+        microsoftTeams.app.initialize().then(() => {
+          sdkStatus.textContent = "✅ Microsoft Teams SDK initialized.";
 
-      microsoftTeams.app.getContext().then((context) => {
-        const message = context.subEntityId || "No message found.";
-        messageOutput.textContent = "📩 Message: " + decodeURIComponent(message);
-      }).catch((err) => {
-        messageOutput.textContent = "❌ Failed to get context: " + err;
-      });
-    }).catch((err) => {
-      sdkStatus.textContent = "❌ SDK init failed: " + err;
+          // Try to get context via SDK
+          microsoftTeams.app.getContext().then((context) => {
+            const message = context.subEntityId;
+            if (message) {
+              messageOutput.textContent = "📩 Message from context: " + message;
+            } else {
+              // Fallback: Try to extract from URL manually
+              const params = new URLSearchParams(window.location.search);
+              const contextParam = params.get("context");
+
+              if (contextParam) {
+                try {
+                  const parsedContext = JSON.parse(decodeURIComponent(contextParam));
+                  const subEntity = parsedContext.subEntityId;
+                  messageOutput.textContent = subEntity
+                    ? "📩 Message from URL: " + subEntity
+                    : "ℹ️ Context present, but no subEntityId found.";
+                } catch (e) {
+                  messageOutput.textContent = "❌ Error parsing context from URL.";
+                }
+              } else {
+                messageOutput.textContent = "ℹ️ No message was passed in the context or URL.";
+              }
+            }
+          }).catch((err) => {
+            messageOutput.textContent = "❌ Failed to get context: " + err;
+          });
+        }).catch((err) => {
+          sdkStatus.textContent = "❌ SDK init failed: " + err;
+        });
+      } else {
+        sdkStatus.textContent = "⚠️ Not running inside Microsoft Teams.";
+        messageOutput.textContent = "ℹ️ Please open this page within the Microsoft Teams application.";
+      }
     });
-  });
-</script>
-
+  </script>
 </body>
 </html>
