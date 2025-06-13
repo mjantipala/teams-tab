@@ -1,76 +1,41 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>DocuVu Notification Tab</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 2rem;
-      background: #f2f2f2;
-    }
-    .card {
-      background: white;
-      padding: 1.5rem;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-  </style>
-  <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
-</head>
-<body>
-  <div class="card">
-    <h2>DocuVu Notification Tab</h2>
-    <p id="sdk-status">Loading...</p>
-    <p id="message-output"></p>
-  </div>
+<script>
+  window.addEventListener("DOMContentLoaded", () => {
+    const sdkStatus = document.getElementById("sdk-status");
+    const messageOutput = document.getElementById("message-output");
 
-  <script>
-    window.addEventListener("DOMContentLoaded", () => {
-      const sdkStatus = document.getElementById("sdk-status");
-      const messageOutput = document.getElementById("message-output");
+    microsoftTeams.app.initialize().then(() => {
+      sdkStatus.textContent = "✅ Microsoft Teams SDK initialized.";
 
-      if (!window.microsoftTeams || !microsoftTeams.app) {
-        sdkStatus.textContent = "❌ Microsoft Teams SDK not available.";
-        return;
-      }
+      microsoftTeams.app.getContext().then((context) => {
+        // Try subEntityId from SDK (fallback if launched via subEntityId path)
+        if (context.subEntityId) {
+          messageOutput.textContent = "📩 Message (SDK): " + context.subEntityId;
+          return;
+        }
 
-      microsoftTeams.app.initialize().then(() => {
-        sdkStatus.textContent = "✅ Microsoft Teams SDK initialized.";
+        // Otherwise try parsing the ?context= param manually
+        const params = new URLSearchParams(window.location.search);
+        const contextParam = params.get("context");
 
-        // Try to get message via context API
-        microsoftTeams.app.getContext().then((context) => {
-          const message = context?.subEntityId;
-          if (message) {
-            messageOutput.textContent = "📩 Message from context: " + message;
-          } else {
-            // Fallback: Try extracting from URL query string
-            const params = new URLSearchParams(window.location.search);
-            const contextParam = params.get("context");
-
-            if (contextParam) {
-              try {
-                const parsedContext = JSON.parse(decodeURIComponent(contextParam));
-                const fallbackMessage = parsedContext.subEntityId;
-
-                messageOutput.textContent = fallbackMessage
-                  ? "📩 Message from URL: " + fallbackMessage
-                  : "ℹ️ No subEntityId in decoded context.";
-              } catch (e) {
-                messageOutput.textContent = "❌ Failed to parse 'context' from URL.";
-              }
-            } else {
-              messageOutput.textContent = "ℹ️ No message was passed in the context or URL.";
-            }
+        if (contextParam) {
+          try {
+            const decoded = decodeURIComponent(contextParam);
+            const contextObj = JSON.parse(decoded);
+            const message = contextObj.subEntityId;
+            messageOutput.textContent = message
+              ? "📩 Message (query param): " + message
+              : "ℹ️ Context parsed, but no message.";
+          } catch (e) {
+            messageOutput.textContent = "❌ Error parsing context JSON.";
           }
-        }).catch((err) => {
-          messageOutput.textContent = "❌ Failed to get context: " + err;
-        });
-
+        } else {
+          messageOutput.textContent = "ℹ️ No message passed via SDK or URL.";
+        }
       }).catch((err) => {
-        sdkStatus.textContent = "❌ SDK initialization failed: " + err;
+        messageOutput.textContent = "❌ Failed to get context: " + err;
       });
+    }).catch((err) => {
+      sdkStatus.textContent = "❌ SDK init failed: " + err;
     });
-  </script>
-</body>
-</html>
+  });
+</script>
