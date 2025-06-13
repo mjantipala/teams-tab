@@ -26,51 +26,24 @@
   </div>
 
   <script>
-    window.addEventListener("DOMContentLoaded", () => {
-      const sdkStatus = document.getElementById("sdk-status");
-      const messageOutput = document.getElementById("message-output");
+  window.addEventListener("DOMContentLoaded", () => {
+    const sdkStatus = document.getElementById("sdk-status");
+    const messageOutput = document.getElementById("message-output");
 
-      if (!window.microsoftTeams || !microsoftTeams.app) {
-        sdkStatus.textContent = "❌ Microsoft Teams SDK not available.";
-        return;
-      }
+    microsoftTeams.app.initialize().then(() => {
+      sdkStatus.textContent = "✅ Microsoft Teams SDK initialized.";
 
-      microsoftTeams.app.initialize().then(() => {
-        sdkStatus.textContent = "✅ Microsoft Teams SDK initialized.";
-
-        // Try to get message via context API
-        microsoftTeams.app.getContext().then((context) => {
-          const message = context?.subEntityId;
-          if (message) {
-            messageOutput.textContent = "📩 Message from context: " + message;
-          } else {
-            // Fallback: Try extracting from URL query string
-            const params = new URLSearchParams(window.location.search);
-            const contextParam = params.get("context");
-
-            if (contextParam) {
-              try {
-                const parsedContext = JSON.parse(decodeURIComponent(contextParam));
-                const fallbackMessage = parsedContext.subEntityId;
-
-                messageOutput.textContent = fallbackMessage
-                  ? "📩 Message from URL: " + fallbackMessage
-                  : "ℹ️ No subEntityId in decoded context.";
-              } catch (e) {
-                messageOutput.textContent = "❌ Failed to parse 'context' from URL.";
-              }
-            } else {
-              messageOutput.textContent = "ℹ️ No message was passed in the context or URL.";
-            }
-          }
-        }).catch((err) => {
-          messageOutput.textContent = "❌ Failed to get context: " + err;
-        });
-
+      microsoftTeams.app.getContext().then((context) => {
+        const message = context.subEntityId || "No message found.";
+        messageOutput.textContent = "📩 Message: " + decodeURIComponent(message);
       }).catch((err) => {
-        sdkStatus.textContent = "❌ SDK initialization failed: " + err;
+        messageOutput.textContent = "❌ Failed to get context: " + err;
       });
+    }).catch((err) => {
+      sdkStatus.textContent = "❌ SDK init failed: " + err;
     });
-  </script>
+  });
+</script>
+
 </body>
 </html>
