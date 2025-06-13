@@ -20,51 +20,46 @@
     const sdkStatus = document.getElementById("sdk-status");
     const messageOutput = document.getElementById("message-output");
 
-    function tryGetMessageFromUrl() {
-      const params = new URLSearchParams(window.location.search);
-      const contextParam = params.get('context');
-      if (contextParam) {
+    async function init() {
+      try {
+        await microsoftTeams.app.initialize();
+        sdkStatus.textContent = "✅ Microsoft Teams SDK initialized.";
+
         try {
-          const contextObj = JSON.parse(decodeURIComponent(contextParam));
-          const message = contextObj.subEntityId;
-          return message;
-        } catch (e) {
-          console.error("Context JSON parse failed", e);
-          return null;
+          const context = await microsoftTeams.app.getContext();
+          if (context.subEntityId) {
+            messageOutput.textContent = "📩 Message (from Teams SDK): " + context.subEntityId;
+            return;
+          }
+        } catch(error) {
+          messageOutput.textContent = "⚠️ Teams context not found." + error;
         }
+
+        // Fallback: check query string
+        const params = new URLSearchParams(window.location.search);
+        const contextParam = params.get("context");
+
+        if (contextParam) {
+          try {
+            const decoded = decodeURIComponent(contextParam);
+            const parsed = JSON.parse(decoded);
+            const message = parsed.subEntityId;
+            messageOutput.textContent = message
+              ? "📩 Message (from URL): " + message
+              : "ℹ️ No message in context.";
+          } catch (err) {
+            messageOutput.textContent = "❌ Error parsing context: " + err;
+          }
+        } else {
+          messageOutput.textContent = "ℹ️ No message was passed in the context or URL.";
+        }
+
+      } catch (err) {
+        sdkStatus.textContent = "❌ SDK init failed: " + err;
       }
-      return null;
     }
 
-    window.addEventListener("DOMContentLoaded", () => {
-      if (window.microsoftTeams?.app?.initialize) {
-        microsoftTeams.app.initialize().then(() => {
-          sdkStatus.textContent = "✅ Microsoft Teams SDK initialized.";
-
-          microsoftTeams.app.getContext().then((context) => {
-            const message = context.subEntityId;
-            if (message) {
-              messageOutput.textContent = "📩 Message: " + message;
-            } else {
-              // Fallback: Try to parse from query string
-              const fallbackMessage = tryGetMessageFromUrl();
-              if (fallbackMessage) {
-                messageOutput.textContent = "📩 (Fallback) Message: " + fallbackMessage;
-              } else {
-                messageOutput.textContent = "ℹ️ No message was passed in the context or URL.";
-              }
-            }
-          }).catch(err => {
-            messageOutput.textContent = "❌ Failed to get context: " + err;
-          });
-
-        }).catch(err => {
-          sdkStatus.textContent = "❌ SDK init failed: " + err;
-        });
-      } else {
-        sdkStatus.textContent = "❌ Microsoft Teams SDK not available.";
-      }
-    });
+    window.addEventListener("DOMContentLoaded", init);
   </script>
 </body>
 </html>
