@@ -20,7 +20,7 @@
       background: #ffffff;
       border-radius: 12px;
       padding: 2rem;
-      max-width: 500px;
+      max-width: 600px;
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
       text-align: center;
     }
@@ -40,6 +40,7 @@
     .status {
       font-size: 0.875rem;
       color: #777;
+      margin-bottom: 1rem;
     }
 
     .error {
@@ -49,6 +50,16 @@
     .info {
       color: #0063b1;
     }
+
+    pre {
+      text-align: left;
+      font-size: 0.9rem;
+      background: #f9f9f9;
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      max-height: 400px;
+    }
   </style>
 </head>
 <body>
@@ -56,12 +67,14 @@
     <h1>📬 DocuVu Notification</h1>
     <div id="message" class="message">Waiting for message...</div>
     <div id="status" class="status">Initializing...</div>
+    <pre id="contextDisplay">{}</pre>
   </div>
 
   <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
   <script>
     const messageEl = document.getElementById("message");
     const statusEl = document.getElementById("status");
+    const contextDisplay = document.getElementById("contextDisplay");
 
     function updateMessage(context) {
       const message = context?.page?.subPageId;
@@ -81,10 +94,12 @@
             statusEl.textContent = "✅ Teams SDK initialized";
 
             microsoftTeams.app.getContext().then((context) => {
+              console.log("🔍 Full Teams context object:", context);
+
               updateMessage(context);
+              contextDisplay.textContent = JSON.stringify(context, null, 2);
 
               if (isWebClient(context)) {
-                // Auto-refresh when tab becomes visible (Web)
                 document.addEventListener("visibilitychange", () => {
                   if (document.visibilityState === "visible") {
                     location.reload();
@@ -93,7 +108,9 @@
                 statusEl.textContent += " | Running in Web - auto-refresh enabled";
               } else if (microsoftTeams.pages?.registerOnLoadHandler) {
                 microsoftTeams.pages.registerOnLoadHandler((updatedContext) => {
+                  console.log("🔁 Updated context:", updatedContext);
                   updateMessage(updatedContext);
+                  contextDisplay.textContent = JSON.stringify(updatedContext, null, 2);
                   statusEl.textContent = "🔁 Tab reloaded via deep link.";
                 });
               } else {
@@ -108,9 +125,3 @@
             statusEl.innerHTML = `<span class="error">❌ SDK init failed: ${err}</span>`;
           });
       } else {
-        statusEl.innerHTML = `<span class="error">❌ Teams SDK not available.</span>`;
-      }
-    });
-  </script>
-</body>
-</html>
