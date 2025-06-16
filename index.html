@@ -20,7 +20,7 @@
       background: #ffffff;
       border-radius: 12px;
       padding: 2rem;
-      max-width: 600px;
+      max-width: 800px;
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
       text-align: center;
     }
@@ -32,8 +32,8 @@
     }
 
     .message {
-      font-size: 1.1rem;
-      margin: 1.5rem 0;
+      font-size: 1rem;
+      margin: 1rem 0;
       color: #444;
     }
 
@@ -47,56 +47,58 @@
       color: #c00;
     }
 
-    .info {
-      color: #0063b1;
-    }
-
     pre {
       text-align: left;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       background: #f9f9f9;
       padding: 1rem;
       border-radius: 8px;
       overflow-x: auto;
       max-height: 400px;
+      margin-top: 1rem;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>📬 DocuVu Notification</h1>
-    <div id="message" class="message">Waiting for message...</div>
+    <div class="message">Teams Context:</div>
     <div id="status" class="status">Initializing...</div>
     <pre id="contextDisplay">{}</pre>
+
+    <div class="message">Teams SDK Structure:</div>
+    <pre id="sdkDisplay">{}</pre>
   </div>
 
   <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
   <script>
-    const messageEl = document.getElementById("message");
     const statusEl = document.getElementById("status");
     const contextDisplay = document.getElementById("contextDisplay");
-
-    function updateMessage(context) {
-      const message = context?.page?.subPageId;
-      messageEl.textContent = message
-        ? `📩 Message: ${decodeURIComponent(message)}`
-        : "ℹ️ No message passed via subPageId.";
-    }
+    const sdkDisplay = document.getElementById("sdkDisplay");
 
     function isWebClient(context) {
       return context?.app?.host?.name?.toLowerCase() === "teamsweb";
     }
 
+    function dumpSdkStructure(sdk) {
+      const keys = Object.keys(sdk).reduce((acc, key) => {
+        acc[key] = typeof sdk[key];
+        return acc;
+      }, {});
+      sdkDisplay.textContent = JSON.stringify(keys, null, 2);
+      console.log("📦 microsoftTeams SDK structure:", keys);
+    }
+
     window.addEventListener("DOMContentLoaded", () => {
       if (window.microsoftTeams?.app) {
+        dumpSdkStructure(window.microsoftTeams); // ← Display SDK structure
+
         microsoftTeams.app.initialize()
           .then(() => {
             statusEl.textContent = "✅ Teams SDK initialized";
 
             microsoftTeams.app.getContext().then((context) => {
               console.log("🔍 Full Teams context object:", context);
-
-              updateMessage(context);
               contextDisplay.textContent = JSON.stringify(context, null, 2);
 
               if (isWebClient(context)) {
@@ -109,7 +111,6 @@
               } else if (microsoftTeams.pages?.registerOnLoadHandler) {
                 microsoftTeams.pages.registerOnLoadHandler((updatedContext) => {
                   console.log("🔁 Updated context:", updatedContext);
-                  updateMessage(updatedContext);
                   contextDisplay.textContent = JSON.stringify(updatedContext, null, 2);
                   statusEl.textContent = "🔁 Tab reloaded via deep link.";
                 });
@@ -118,10 +119,17 @@
               }
 
             }).catch((err) => {
-              messageEl.innerHTML = `<span class="error">❌ Failed to get context: ${err}</span>`;
+              contextDisplay.textContent = "";
+              statusEl.innerHTML = `<span class="error">❌ Failed to get context: ${err}</span>`;
             });
           })
           .catch((err) => {
             statusEl.innerHTML = `<span class="error">❌ SDK init failed: ${err}</span>`;
           });
       } else {
+        statusEl.innerHTML = `<span class="error">❌ Teams SDK not available.</span>`;
+      }
+    });
+  </script>
+</body>
+</html>
