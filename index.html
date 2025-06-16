@@ -20,86 +20,105 @@
       background: #ffffff;
       border-radius: 12px;
       padding: 2rem;
-      max-width: 800px;
+      max-width: 600px;
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-      text-align: center;
+      text-align: left;
     }
 
-    h1 {
-      font-size: 1.5rem;
+    .header {
+      border-bottom: 1px solid #ddd;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+    }
+
+    .subject {
+      font-size: 1.2rem;
+      font-weight: bold;
       color: #2b2b2b;
-      margin-bottom: 0.5rem;
     }
 
-    .message {
+    .meta {
+      font-size: 0.875rem;
+      color: #555;
+      margin-top: 0.3rem;
+    }
+
+    .body {
       font-size: 1rem;
-      margin: 1rem 0;
-      color: #444;
+      color: #333;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      margin-top: 1rem;
     }
 
     .status {
-      font-size: 0.875rem;
+      font-size: 0.8rem;
       color: #777;
-      margin-bottom: 1rem;
+      margin-top: 2rem;
+      text-align: center;
     }
 
     .error {
       color: #c00;
     }
-
-    pre {
-      text-align: left;
-      font-size: 0.85rem;
-      background: #f9f9f9;
-      padding: 1rem;
-      border-radius: 8px;
-      overflow-x: auto;
-      max-height: 400px;
-      margin-top: 1rem;
-    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>📬 DocuVu Notification</h1>
-    <div class="message">Teams Context:</div>
-    <div id="status" class="status">Initializing...</div>
-    <pre id="contextDisplay">{}</pre>
-
-    <div class="message">Teams SDK Structure:</div>
-    <pre id="sdkDisplay">{}</pre>
+    <div class="header">
+      <div class="subject" id="subject">📬 DocuVu Notification</div>
+      <div class="meta" id="meta">From: — | Date: —</div>
+    </div>
+    <div class="body" id="body">Waiting for message...</div>
+    <div class="status" id="status">Initializing...</div>
   </div>
 
   <script src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"></script>
   <script>
+    const subjectEl = document.getElementById("subject");
+    const metaEl = document.getElementById("meta");
+    const bodyEl = document.getElementById("body");
     const statusEl = document.getElementById("status");
-    const contextDisplay = document.getElementById("contextDisplay");
-    const sdkDisplay = document.getElementById("sdkDisplay");
+
+    function formatDate(dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleString(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short"
+      });
+    }
+
+    function updateMessage(context) {
+      const raw = context?.page?.subPageId;
+      if (!raw) {
+        bodyEl.textContent = "ℹ️ No message passed via subPageId.";
+        return;
+      }
+
+      try {
+        const decoded = decodeURIComponent(raw);
+        const data = JSON.parse(decoded);
+
+        subjectEl.textContent = data.subject || "📬 DocuVu Notification";
+        metaEl.textContent = `From: ${data.sender || "—"} | Date: ${data.timestamp ? formatDate(data.timestamp) : "—"}`;
+        bodyEl.textContent = data.body || "No content.";
+      } catch (err) {
+        bodyEl.innerHTML = `<span class="error">❌ Failed to decode message: ${err}</span>`;
+      }
+    }
 
     function isWebClient(context) {
       return context?.app?.host?.name?.toLowerCase() === "teamsweb";
     }
 
-    function dumpSdkStructure(sdk) {
-      const keys = Object.keys(sdk).reduce((acc, key) => {
-        acc[key] = typeof sdk[key];
-        return acc;
-      }, {});
-      sdkDisplay.textContent = JSON.stringify(keys, null, 2);
-      console.log("📦 microsoftTeams SDK structure:", keys);
-    }
-
     window.addEventListener("DOMContentLoaded", () => {
       if (window.microsoftTeams?.app) {
-        dumpSdkStructure(window.microsoftTeams); // ← Display SDK structure
-
         microsoftTeams.app.initialize()
           .then(() => {
             statusEl.textContent = "✅ Teams SDK initialized";
 
             microsoftTeams.app.getContext().then((context) => {
-              console.log("🔍 Full Teams context object:", context);
-              contextDisplay.textContent = JSON.stringify(context, null, 2);
+              updateMessage(context);
 
               if (isWebClient(context)) {
                 document.addEventListener("visibilitychange", () => {
@@ -110,17 +129,14 @@
                 statusEl.textContent += " | Running in Web - auto-refresh enabled";
               } else if (microsoftTeams.pages?.registerOnLoadHandler) {
                 microsoftTeams.pages.registerOnLoadHandler((updatedContext) => {
-                  console.log("🔁 Updated context:", updatedContext);
-                  contextDisplay.textContent = JSON.stringify(updatedContext, null, 2);
+                  updateMessage(updatedContext);
                   statusEl.textContent = "🔁 Tab reloaded via deep link.";
                 });
               } else {
                 statusEl.innerHTML += `<br><span class="error">⚠️ OnLoadHandler not supported on this client.</span>`;
               }
-
             }).catch((err) => {
-              contextDisplay.textContent = "";
-              statusEl.innerHTML = `<span class="error">❌ Failed to get context: ${err}</span>`;
+              bodyEl.innerHTML = `<span class="error">❌ Failed to get context: ${err}</span>`;
             });
           })
           .catch((err) => {
